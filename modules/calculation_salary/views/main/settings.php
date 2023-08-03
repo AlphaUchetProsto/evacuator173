@@ -23,26 +23,20 @@ $this->params['breadcrumbs'][] = $this->title;
         ],
     ]) ?>
 
-    <?= $form->field($model, 'feeExit', ['options' => ['class' => 'form-floating mb-3 mt-5']])
+    <?= $form->field($model, 'feePrepaidExpense', ['options' => ['class' => 'form-floating mb-3 mt-5']])
+        ->textInput(['type' => 'number', 'placeholder' => $model->getAttributeLabel('feePrepaidExpense')]); ?>
+
+    <?= $form->field($model, 'feeExit', ['options' => ['class' => 'form-floating mb-3']])
         ->textInput(['type' => 'number', 'placeholder' => $model->getAttributeLabel('feeExit')]);
     ?>
+
     <?= $form->field($model, 'feeCity', ['options' => ['class' => 'form-floating mb-3']])
-        ->textInput(['type' => 'number', 'placeholder' => $model->getAttributeLabel('feeCity')]); ?>
+        ->textInput(['type' => 'number', 'placeholder' => $model->getAttributeLabel('feeCity')]);
+    ?>
 
     <?= $form->field($model, 'feeIntercity', ['options' => ['class' => 'form-floating mb-3']])
-        ->textInput(['type' => 'number', 'placeholder' => $model->getAttributeLabel('feeIntercity')]); ?>
-
-    <?= $form->field($model, 'feeDailyAllowance', ['options' => ['class' => 'form-floating mb-3']])
-        ->textInput(['type' => 'number', 'placeholder' => $model->getAttributeLabel('feeDailyAllowance')]); ?>
-
-    <?= $form->field($model, 'feeDifficultLoading', ['options' => ['class' => 'form-floating mb-3']])
-        ->textInput(['type' => 'number', 'placeholder' => $model->getAttributeLabel('feeDifficultLoading')]); ?>
-
-    <?= $form->field($model, 'feeUnion', ['options' => ['class' => 'form-floating mb-3']])
-        ->textInput(['type' => 'number', 'placeholder' => $model->getAttributeLabel('feeUnion')]); ?>
-
-    <?= $form->field($model, 'feePrepaidExpense', ['options' => ['class' => 'form-floating mb-3']])
-        ->textInput(['type' => 'number', 'placeholder' => $model->getAttributeLabel('feePrepaidExpense')]); ?>
+        ->textInput(['type' => 'number', 'placeholder' => $model->getAttributeLabel('feeIntercity')]);
+    ?>
 
     <?= Html::submitButton('Сохранить', ['class' => 'btn btn-success']) ?>
 

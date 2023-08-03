@@ -48,6 +48,53 @@ $(document).on('submit', '#filter-form', function (e){
         success: function(content){
             $('.content').html($(content).find('.content').html());
         },
+        error: function(content){
+            alert('Error!');
+        }
+    });
+})
+
+$(document).on('click', '.download-report', function (e){
+    e.preventDefault();
+
+    let data = $("#filter-form").serialize();
+
+    $.ajax({
+        url: '/calculation-salary/main/create-excel',
+        type: 'POST',
+        data: data,
+        beforeSend: function (){
+            $('.download-report').html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Формирую..');
+        },
+        success: function(result){
+            $('.download-report').html('Скачать');
+            window.open('https://zarplata.173evakuator.ru/' + result.result, '_blank');
+        },
+        error: function(content){
+            alert('Error!');
+        }
+    });
+})
+
+$(document).on('submit', '#settings', function (e){
+    e.preventDefault();
+
+    let data = $(this).serialize();
+    let url = $(this).attr('action');
+
+    $.ajax({
+        url: url,
+        type: 'POST',
+        data: data,
+        beforeSend: function (){
+            $('.profile-form-block').remove();
+            $('.content').prepend('<div class="wrapper-loading">\n' +
+                '    <span class="spinner"></span>\n' +
+                '</div>');
+        },
+        success: function(content){
+            $('.content').html($(content).find('.content').html());
+        },
         error: function(){
             alert('Error!');
         }

@@ -24,6 +24,7 @@ $this->registerLinkTag(['rel' => 'icon', 'type' => 'image/x-icon', 'href' => Yii
 <html lang="<?= Yii::$app->language ?>" class="h-100">
 <head>
     <script src="https://kit.fontawesome.com/78d57075c0.js" crossorigin="anonymous"></script>
+    <script src="//api.bitrix24.com/api/v1/"></script>
     <title><?= Html::encode($this->title) ?></title>
     <?php $this->head() ?>
 </head>
@@ -92,7 +93,7 @@ $this->registerLinkTag(['rel' => 'icon', 'type' => 'image/x-icon', 'href' => Yii
                 </ul>
             </nav>
             <div class="user-block">
-                <?= Yii::$app->user->identity->title ?>
+                
             </div>
         </div>
         <div class="content">

@@ -6,13 +6,12 @@ use app\models\bitrix\crm\Contact;
 
 class Driver extends Contact
 {
-    public $totalWorkDay;
-    public $totalWorkedDays;
+    public $telegramId;
 
     public function rules()
     {
         $rules = collect(parent::rules());
-        $rules->push([['totalWorkDay', 'totalWorkedDays'], 'default', 'value' => 0]);
+        $rules->push([['telegramId'], 'safe']);
 
         return $rules->toArray();
     }
@@ -20,8 +19,7 @@ class Driver extends Contact
     public static function mapFields()
     {
         $mapFields = collect(parent::mapFields());
-        $mapFields->put('UF_CRM_1690978626189', 'totalWorkDay');
-        $mapFields->put('UF_CRM_1690978617774', 'totalWorkedDays');
+        $mapFields->put('UF_CRM_1691049416362', 'telegramId');
 
         return $mapFields->toArray();
     }

@@ -14,7 +14,7 @@ class Bitrix
 
     public function __construct($config = [])
     {
-        $this->rest_url = Yii::$app->params['bitrix']['webhook_url'];
+        $this->rest_url = Yii::$app->params['bitrix']['connection']['restUrl'] . Yii::$app->params['bitrix']['connection']['webhookToken'];
 
         $client = new HTTP();
         $client->throttle = 2;

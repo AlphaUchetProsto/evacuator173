@@ -24,7 +24,7 @@ class FilterModel extends Model
         return [
             [['year', 'month'], 'required'],
             [['year', 'month'], 'number'],
-            [['day'], 'default', 'value' => 18],
+            [['day'], 'default', 'value' => 1],
         ];
     }
 
@@ -50,5 +50,27 @@ class FilterModel extends Model
     public function filter()
     {
         return SalaryReport::create($this->getFilterDay());
+    }
+
+    public function createExcel()
+    {
+        $reports = SalaryReport::create($this->getFilterDay());
+
+        $filePath = 'src/calculation_salary/reports.csv';
+
+        $text = iconv('utf-8//IGNORE', 'windows-1251//IGNORE', "ФИО водителя;Отработано дней;Аванс, руб.;ЗП с авансом, руб.;К выплате, руб.;\r\n");
+        file_put_contents($filePath, $text);
+
+        foreach ($reports as $index => $item)
+        {
+            $feePrepaidExpense = number_format($item->settings->feePrepaidExpense, 2, ',', ' ');
+            $totalSalary = number_format($item->totalSalary, 2, ',', ' ');
+            $salary = number_format($item->salary, 2, ',', ' ');
+
+            $text = iconv('utf-8//IGNORE', 'windows-1251//IGNORE', "{$item->driver->lastName} {$item->driver->name} {$item->driver->secondName};{$item->totalWorkedDays};{$feePrepaidExpense};{$totalSalary};{$salary};\r\n");
+            file_put_contents($filePath, $text, FILE_APPEND);
+        }
+
+        return $filePath;
     }
 }

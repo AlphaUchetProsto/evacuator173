@@ -133,6 +133,10 @@ input, textarea, label, select{
     word-wrap: break-word;
 }
 
+.default-table a{
+    color: #475467 !important;
+}
+
 .default-table thead tr, .default-table tbody tr{
     border-bottom: 1px solid #EAECF0;
 }
