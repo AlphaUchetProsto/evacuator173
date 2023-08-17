@@ -2,9 +2,11 @@
 
 namespace app\modules\calculation_salary\controllers;
 
+use app\models\bitrix\Bitrix;
 use app\modules\calculation_salary\models\FilterModel;
 use app\modules\calculation_salary\models\Settings;
 use yii\base\BaseObject;
+use yii\helpers\ArrayHelper;
 use yii\web\Controller;
 use app\modules\calculation_salary\models\App;
 use app\modules\calculation_salary\models\SalaryReport;
@@ -58,6 +60,24 @@ class MainController extends Controller
         {
             return [
                 'result' => $model->createExcel()
+            ];
+        }
+
+        return [
+            'error' => 'Не удалось создать файл',
+        ];
+    }
+
+    public function actionCreateTranscript()
+    {
+        \Yii::$app->response->format = Response::FORMAT_JSON;
+
+        $model = new FilterModel();
+
+        if(\Yii::$app->request->isPost && $model->load(\Yii::$app->request->post()) && $model->validate())
+        {
+            return [
+                'result' => $model->createTranscriptTable(\Yii::$app->request->get('indexReport'))
             ];
         }
 

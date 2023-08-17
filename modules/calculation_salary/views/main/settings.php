@@ -38,6 +38,10 @@ $this->params['breadcrumbs'][] = $this->title;
         ->textInput(['type' => 'number', 'placeholder' => $model->getAttributeLabel('feeIntercity')]);
     ?>
 
+    <?= $form->field($model, 'carTransporter', ['options' => ['class' => 'form-floating mb-3']])
+        ->textInput(['type' => 'number', 'placeholder' => $model->getAttributeLabel('carTransporter')]);
+    ?>
+
     <?= Html::submitButton('Сохранить', ['class' => 'btn btn-success']) ?>
 
     <?php $form::end() ?>

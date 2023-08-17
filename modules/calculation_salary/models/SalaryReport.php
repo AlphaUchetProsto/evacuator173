@@ -7,6 +7,7 @@ use app\modules\calculation_salary\models\Settings;
 use Tightenco\Collect\Support\Collection;
 use yii\base\Model;
 use app\models\TelegramBot;
+use yii\helpers\ArrayHelper;
 
 class SalaryReport extends Model
 {
@@ -40,7 +41,7 @@ class SalaryReport extends Model
             $model->deals = $deals->get($driver->id);
             $model->settings = $settings;
             $model->totalWorkedDays = collect($model->deals)->groupBy(function ($deal){
-                return date('Y-m-d', strtotime($deal->dateCreate));
+                return date('Y-m-d', strtotime($deal->closedDate));
             })->count();
 
             $model->validate();
@@ -54,22 +55,34 @@ class SalaryReport extends Model
 
     public function calculateSalary()
     {
+        $bitrix = new Bitrix();
+        ['result' => $listCar] = $bitrix->request('crm.deal.fields');
+
+        $listCar = ArrayHelper::map($listCar['UF_CRM_1626442809025']['items'], 'ID', 'VALUE');
+
         foreach ($this->deals as &$deal)
         {
-            $deal->totalFee = $deal->feeDifficultLoading + $deal->feeDailyAllowance;
+            $deal->totalFee = $deal->feeDifficultLoading;
 
-            if($deal->isFeeCity == 245)
+            if(!$deal->isCarTransporter($listCar))
             {
-                $deal->feeCity = (($deal->opportunity - $deal->feeEmergencyCommissioner) / 100) * $this->settings->feeCity;
-                $this->salary += $deal->feeCity;
-                $deal->totalFee += $deal->feeCity;
+                if($deal->isFeeCity == 245)
+                {
+                    $deal->feeCity = (($deal->opportunity - $deal->feeEmergencyCommissioner) / 100) * $this->settings->feeCity;
+                    $this->salary += $deal->feeCity;
+                    $deal->totalFee += $deal->feeCity;
+                }
+
+                if($deal->isFeeIntercity == 241)
+                {
+                    $deal->feeIntercity = (($deal->opportunity - $deal->feeEmergencyCommissioner) / 100) * $this->settings->feeIntercity;
+                    $this->salary += $deal->feeIntercity;
+                    $deal->totalFee += $deal->feeIntercity;
+                }
             }
-
-            if($deal->isFeeIntercity == 241)
+            else
             {
-                $deal->feeIntercity = (($deal->opportunity - $deal->feeEmergencyCommissioner) / 100) * $this->settings->feeIntercity;
-                $this->salary += $deal->feeIntercity;
-                $deal->totalFee += $deal->feeIntercity;
+                $deal->totalFee += ($deal->opportunity / 100) * $this->settings->carTransporter;
             }
 
             $this->totalFeeDeal += $deal->totalFee;
@@ -77,6 +90,12 @@ class SalaryReport extends Model
 
         $this->totalSalary = (($this->totalWorkedDays * $this->settings->feeExit) + $this->totalFeeDeal);
         $this->salary = $this->totalSalary - $this->settings->feePrepaidExpense;
+
+        if($this->driver->sumFine > 0)
+        {
+            $this->totalSalary -= $this->driver->sumFine;
+            $this->salary -= $this->driver->sumFine;
+        }
     }
 
     public static function getDeals($date)
@@ -94,8 +113,8 @@ class SalaryReport extends Model
                 'filter' => [
                     '=STAGE_ID' => 'WON',
                     '>ID' => $dealId,
-                    '>=DATE_CREATE' => date('Y-m-d', strtotime('-1 month', strtotime($date))),
-                    '<=DATE_CREATE' => $date,
+                    '>=CLOSEDATE' => date('Y-m-d', strtotime('-1 month', strtotime($date))),
+                    '<=CLOSEDATE' => $date,
                 ],
                 'select' => collect(Deal::mapFields())->keys()->toArray(),
                 'start' => '-1'

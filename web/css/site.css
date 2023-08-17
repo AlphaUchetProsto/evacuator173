@@ -714,3 +714,12 @@ input, textarea, label, select{
     display: none;
 }
 
+.wrapper-spinner{
+    position: absolute;
+    top: 7px;
+    right: 7px;
+}
+
+.fine{
+    position: relative;
+}

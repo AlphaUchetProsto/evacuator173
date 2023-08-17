@@ -48,6 +48,7 @@ $this->params['breadcrumbs'][] = $this->title;
             <th class="text-center column-small">#</th>
             <th>ФИО водителя</th>
             <th class="text-center">Отработано дней</th>
+            <th class="text-center" style="width: 120px;">Штрафы</th>
             <th class="text-center">Аванс, руб.</th>
             <th class="text-center">ЗП с авансом, руб.</th>
             <th class="text-center">К выплате, руб.</th>
@@ -63,26 +64,42 @@ $this->params['breadcrumbs'][] = $this->title;
                     <td class="text-center"><span class="bg-blue"><?= $key + 1 ?><span></td>
                     <td><a href="javascript::void()" onclick="BX24.openPath('/crm/contact/details/<?= $item->driver->id ?>/');"><?= "{$item->driver->lastName} {$item->driver->name} {$item->driver->secondName}" ?></a></td>
                     <td class="text-center"><?= $item->totalWorkedDays ?></td>
+                    <td class="text-center">
+                        <div class="fine">
+                            <?= Html::input('number', 'fine', $item->driver->sumFine, ['class' => ['form-control fine-input'], 'driver-id' => $item->driver->id]) ?>
+                            <div class="wrapper-spinner hide-block">
+                                <div class="spinner-border spinner-border-sm" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
                     <td class="text-center"><?= number_format($item->settings->feePrepaidExpense, 2, ',', ' ') ?></td>
                     <td class="text-center"><?= number_format($item->totalSalary, 2, ',', ' ') ?></td>
                     <td class="text-center"><?= number_format($item->salary, 2, ',', ' ') ?></td>
                 </tr>
                 <tr class="details data-<?= $item->driver->id ?> hide-block">
-                    <td colspan="7">
+                    <td colspan="8">
                         <div style="margin-left: 50px;">
-                            <h4 class="mt-4 mb-4">Расшифровка сделок</h4>
-
+                            <div class="row mt-4 mb-4" >
+                                <div class="col">
+                                    <h4>Расшифровка сделок</h4>
+                                </div>
+                                <div class="col-auto">
+                                    <?= Html::button('Скачать', ['class' => 'btn btn-primary download-trascript', 'aria-label' => $key]) ?>
+                                </div>
+                            </div>
                             <table class="default-table">
                                 <thead>
                                 <tr>
                                     <th class="text-center column-small">#</th>
                                     <th style="width: 30%;">Название сделки</th>
+                                    <th>Дата завершения</th>
                                     <th class="text-center">Сумма, руб.</th>
                                     <th class="text-center">Сложная погрузка</th>
                                     <th class="text-center">Меж город, руб</th>
                                     <th class="text-center">Город, руб</th>
                                     <th class="text-center">Аварийный комиссар, руб</th>
-                                    <th class="text-center">Суточные, руб.</th>
                                     <th class="text-center">Итого комиссия, руб.</th>
                                 </tr>
                                 </thead>
@@ -93,12 +110,12 @@ $this->params['breadcrumbs'][] = $this->title;
                                         <td>
                                             <a href="javascript::void()" onclick="BX24.openPath('/crm/deal/details/<?= $deal->id ?>/');"><?= $deal->title ?></a>
                                         </td>
+                                        <td class="text-center"><?= date('d.m.Y', strtotime($deal->closedDate))?></td>
                                         <td class="text-center"><?= $deal->opportunity ?></td>
                                         <td class="text-center"><?= number_format($deal->feeDifficultLoading, 2, ',', ' ') ?></td>
                                         <td class="text-center"><?= number_format($deal->feeIntercity, 2, ',', ' ') ?></td>
                                         <td class="text-center"><?= number_format($deal->feeCity, 2, ',', ' ') ?></td>
                                         <td class="text-center"><?= number_format($deal->feeEmergencyCommissioner, 2, ',', ' ') ?></td>
-                                        <td class="text-center"><?= number_format($deal->feeDailyAllowance, 2, ',', ' ') ?></td>
                                         <td class="text-center"><?= number_format($deal->totalFee, 2, ',', ' ') ?></td>
                                     </tr>
                                 <?php endforeach; ?>

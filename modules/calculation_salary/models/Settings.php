@@ -11,6 +11,7 @@ class Settings extends Model
     public $feePrepaidExpense;
     public $feeCity;
     public $feeIntercity;
+    public $carTransporter;
 
     public function attributeLabels()
     {
@@ -19,6 +20,7 @@ class Settings extends Model
             'feePrepaidExpense' => 'Аванс',
             'feeCity' => 'Город, %',
             'feeIntercity' => 'Межгород, %',
+            'carTransporter' => 'Автовоз, %',
         ];
     }
 
@@ -26,16 +28,18 @@ class Settings extends Model
     {
         return [
             [['feeExit', 'feePrepaidExpense'], 'number'],
-            [['feeExit', 'feePrepaidExpense', 'feeCity', 'feeIntercity'], 'default', 'value' => 0],
+            [['feeExit', 'feePrepaidExpense', 'feeCity', 'feeIntercity', 'carTransporter'], 'default', 'value' => 0],
         ];
     }
 
     public static function instance($refresh = false)
     {
-        /*$client = App::instance();*/
+//        $client = App::instance();
         //$response = $client->request('entity.add', ['ENTITY' => 'settings', 'NAME' => 'Константы расчета']);
         //$response = $client->request('entity.item.property.add', ['ENTITY' => 'settings', 'PROPERTY' => 'feeExit', 'NAME' => 'Выход, руб.', 'TYPE' => 'S']);
-        //$response = $client->request('entity.item.property.add', ['ENTITY' => 'settings', 'PROPERTY' => 'feePrepaidExpense', 'NAME' => 'Аванс', 'TYPE' => 'S']);
+//        $response = $client->request('entity.item.property.add', ['ENTITY' => 'settings', 'PROPERTY' => 'carTransporter', 'NAME' => 'Автовоз, %', 'TYPE' => 'S']);
+//        dd($response);
+
         /*$response = $client->request('entity.item.add', [
             'ENTITY' => 'settings',
             'NAME' => 'Параметры',
@@ -56,6 +60,7 @@ class Settings extends Model
         $model->feePrepaidExpense = $response['PROPERTY_VALUES']['feePrepaidExpense'];
         $model->feeCity = $response['PROPERTY_VALUES']['feeCity'];
         $model->feeIntercity = $response['PROPERTY_VALUES']['feeIntercity'];
+        $model->carTransporter = $response['PROPERTY_VALUES']['carTransporter'];
 
         $model->validate();
 
@@ -74,6 +79,7 @@ class Settings extends Model
                 'feePrepaidExpense' => $this->feePrepaidExpense,
                 'feeCity' => $this->feeCity,
                 'feeIntercity' => $this->feeIntercity,
+                'carTransporter' => $this->carTransporter,
             ],
         ]);
     }

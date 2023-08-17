@@ -76,6 +76,29 @@ $(document).on('click', '.download-report', function (e){
     });
 })
 
+$(document).on('click', '.download-trascript', function (e){
+    e.preventDefault();
+
+    var btn = $(this);
+    let data = $("#filter-form").serialize();
+
+    $.ajax({
+        url: '/calculation-salary/main/create-transcript?indexReport=' + btn.attr('aria-label'),
+        type: 'POST',
+        data: data,
+        beforeSend: function (){
+            btn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Формирую..');
+        },
+        success: function(result){
+            btn.html('Скачать');
+            window.open('https://zarplata.173evakuator.ru/' + result.result, '_blank');
+        },
+        error: function(content){
+            alert('Error!');
+        }
+    });
+})
+
 $(document).on('submit', '#settings', function (e){
     e.preventDefault();
 
@@ -98,6 +121,16 @@ $(document).on('submit', '#settings', function (e){
         error: function(){
             alert('Error!');
         }
+    });
+})
+
+$(document).on('change', '.fine-input', function (e){
+    var element = $(this).closest('div').find('.wrapper-spinner');
+
+    element.toggleClass('hide-block');
+
+    BX24.callMethod('crm.contact.update', {'ID': $(this).attr('driver-id'), 'fields': {'UF_CRM_1691405841467': $(this).val()}}, function (res){
+        element.toggleClass('hide-block');
     });
 })
 

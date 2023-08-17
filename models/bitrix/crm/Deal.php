@@ -20,6 +20,7 @@ class Deal extends Model
     public $countMonthInstallment;
     public $codeWord;
     public $dateCreate;
+    public $closedDate;
 
     use Collector;
 
@@ -27,7 +28,7 @@ class Deal extends Model
     {
         return [
             [['id', 'contactId', 'companyId', 'opportunity', 'categoryId'], 'number'],
-            [['title', 'stageId', 'countMonthInstallment', 'codeWord', 'dateCreate'], 'string'],
+            [['title', 'stageId', 'countMonthInstallment', 'codeWord', 'dateCreate', 'closedDate'], 'string'],
             ['categoryId', 'default', 'value' => 0],
         ];
     }
@@ -43,6 +44,7 @@ class Deal extends Model
             'STAGE_ID' => 'stageId',
             'CATEGORY_ID' => 'categoryId',
             'DATE_CREATE' => 'dateCreate',
+            'CLOSEDATE' => 'closedDate',
         ];
     }
 
