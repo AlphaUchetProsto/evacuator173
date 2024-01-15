@@ -18,11 +18,12 @@ class SalaryReport extends Model
     public $salary;
     public $totalSalary;
     public $settings;
+    public $totalSalaryWithoutFine;
 
     public function rules()
     {
         return [
-            [['salary', 'totalFeeDeal', 'totalWorkedDays', 'totalSalary'], 'default', 'value' => 0],
+            [['salary', 'totalFeeDeal', 'totalWorkedDays', 'totalSalary', 'totalSalaryWithoutFine'], 'default', 'value' => 0],
         ];
     }
 
@@ -32,6 +33,9 @@ class SalaryReport extends Model
 
         $deals = static::getDeals($date);
         $drivers = static::getDrivers(collect($deals)->keys());
+
+        $additionalData = static::getAdditionalData($date);
+
         $settings = Settings::instance();
 
         foreach ($drivers as $driver)
@@ -43,6 +47,24 @@ class SalaryReport extends Model
             $model->totalWorkedDays = collect($model->deals)->groupBy(function ($deal){
                 return date('Y-m-d', strtotime($deal->closedDate));
             })->count();
+
+            $fine = collect($additionalData['fines'])->filter(function ($item) use($model) {
+                return $item['contactId'] == $model->driver->id;
+            });
+
+            if($fine->isNotEmpty())
+            {
+                $model->driver->sumFine = $fine->values()->get(0)['value'];
+            }
+
+            $businessDay = collect($additionalData['business_days'])->filter(function ($item) use($model) {
+                return $item['contactId'] == $model->driver->id;
+            });
+
+            if($businessDay->isNotEmpty())
+            {
+                $model->driver->businessDays = $businessDay->values()->get(0)['value'];
+            }
 
             $model->validate();
             $model->calculateSalary();
@@ -60,6 +82,9 @@ class SalaryReport extends Model
 
         $listCar = ArrayHelper::map($listCar['UF_CRM_1626442809025']['items'], 'ID', 'VALUE');
 
+        $tempDate = strtotime('now');
+        $minusBonus = 0;
+
         foreach ($this->deals as &$deal)
         {
             $deal->totalFee = $deal->feeDifficultLoading;
@@ -68,28 +93,36 @@ class SalaryReport extends Model
             {
                 if($deal->isFeeCity == 245)
                 {
-                    $deal->feeCity = (($deal->opportunity - $deal->feeEmergencyCommissioner) / 100) * $this->settings->feeCity;
+                    $deal->feeCity = (($deal->opportunity - $deal->feeEmergencyCommissioner - $deal->feeDifficultLoading) / 100) * $this->settings->feeCity;
                     $this->salary += $deal->feeCity;
                     $deal->totalFee += $deal->feeCity;
                 }
 
                 if($deal->isFeeIntercity == 241)
                 {
-                    $deal->feeIntercity = (($deal->opportunity - $deal->feeEmergencyCommissioner) / 100) * $this->settings->feeIntercity;
+                    $deal->feeIntercity = (($deal->opportunity - $deal->feeEmergencyCommissioner - $deal->feeDifficultLoading) / 100) * $this->settings->feeIntercity;
                     $this->salary += $deal->feeIntercity;
                     $deal->totalFee += $deal->feeIntercity;
                 }
             }
             else
             {
-                $deal->totalFee += ($deal->opportunity / 100) * $this->settings->carTransporter;
+                $deal->totalFee += (($deal->opportunity - $deal->feeDifficultLoading) / 100) * $this->settings->carTransporter;
+
+                if(strtotime(date('Y-m-d', strtotime($deal->closedDate))) !== $tempDate)
+                {
+                    $minusBonus += $this->settings->feeExit;
+                    $tempDate = strtotime(date('Y-m-d', strtotime($deal->closedDate)));
+                }
             }
 
             $this->totalFeeDeal += $deal->totalFee;
         }
 
-        $this->totalSalary = (($this->totalWorkedDays * $this->settings->feeExit) + $this->totalFeeDeal);
+        $this->totalSalary = ((($this->totalWorkedDays + $this->driver->businessDays) * $this->settings->feeExit) + $this->totalFeeDeal);
+        $this->totalSalary -= $minusBonus;
         $this->salary = $this->totalSalary - $this->settings->feePrepaidExpense;
+        $this->totalSalaryWithoutFine = $this->totalSalary;
 
         if($this->driver->sumFine > 0)
         {
@@ -113,8 +146,8 @@ class SalaryReport extends Model
                 'filter' => [
                     '=STAGE_ID' => 'WON',
                     '>ID' => $dealId,
-                    '>=CLOSEDATE' => date('Y-m-d', strtotime('-1 month', strtotime($date))),
-                    '<=CLOSEDATE' => $date,
+                    '>=CLOSEDATE' => date('Y-m-d 00:00', strtotime('-1 month', strtotime($date))),
+                    '<CLOSEDATE' => $date,
                 ],
                 'select' => collect(Deal::mapFields())->keys()->toArray(),
                 'start' => '-1'
@@ -135,6 +168,8 @@ class SalaryReport extends Model
 
         if($deals->isNotEmpty())
         {
+            $deals = $deals->sortBy('closedDate');
+
             $deals = $deals->groupBy(function ($deal){
                 return $deal->driverId;
             });
@@ -154,7 +189,7 @@ class SalaryReport extends Model
 
         foreach ($commandRows as $commandRow)
         {
-            $response = $bitrix->batchRequest($commandRow->toArray());
+            $response = $bitrix->batchRequest($commandRow->toArray(), false);
             $response = Driver::multipleCollect(new Driver(), $response['result']['result']);
 
             $drivers = $drivers->merge($response);
@@ -195,5 +230,32 @@ class SalaryReport extends Model
                 $bot->sendMessage($report->driver->telegramId, $message);
             }
         }
+    }
+
+    public static function getAdditionalData($date)
+    {
+        $client = App::instance();
+
+        $commands['fines'] = $client->buildCommand('entity.item.get', [
+            'ENTITY' => 'fine',
+            'FILTER' => [
+                'NAME' => \Yii::$app->params['month'][date('n', strtotime($date))] . ' ' . date('Y', strtotime($date)),
+            ],
+        ]);
+
+        $commands['business_days'] = $client->buildCommand('entity.item.get', [
+            'ENTITY' => 'business_days',
+            'FILTER' => [
+                'NAME' => \Yii::$app->params['month'][date('n', strtotime($date))] . ' ' . date('Y', strtotime($date)),
+            ],
+        ]);
+
+        ['result' => ['result' => $response]] = $client->batchRequest($commands);
+
+        return collect($response)->transform(function ($items){
+            return collect($items)->map(function ($item){
+                return $item['PROPERTY_VALUES'];
+            })->toArray();
+        })->toArray();
     }
 }

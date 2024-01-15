@@ -24,7 +24,8 @@
         "guzzlehttp/guzzle": "*",
         "kadotafig/yii2-formwizard": "@dev",
         "ext-json": "*",
-        "kartik-v/yii2-widget-datepicker": "@dev"
+        "kartik-v/yii2-widget-datepicker": "@dev",
+        "phpoffice/phpspreadsheet": "^1.29"
     },
     "require-dev": {
         "yiisoft/yii2-debug": "*",

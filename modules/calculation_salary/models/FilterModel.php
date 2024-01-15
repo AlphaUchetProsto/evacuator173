@@ -5,6 +5,9 @@ namespace app\modules\calculation_salary\models;
 use Tightenco\Collect\Support\Collection;
 use yii\base\Model;
 
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+
 class FilterModel extends Model
 {
     public $year;
@@ -76,17 +79,29 @@ class FilterModel extends Model
 
     public function createTranscriptTable($indexReport)
     {
-        $reports = SalaryReport::create($this->getFilterDay());
         $filePath = 'src/calculation_salary/transcript.csv';
 
-        $text = iconv('utf-8//IGNORE', 'windows-1251//IGNORE', "ФИО водителя;{$reports[$indexReport]->driver->lastName}{$reports[$indexReport]->driver->name}{$reports[$indexReport]->driver->secondName};\r\n");
-        file_put_contents($filePath, $text);
+        $reports = SalaryReport::create($this->getFilterDay());
 
-        $text = iconv('utf-8//IGNORE', 'windows-1251//IGNORE', ";\r\n");
-        file_put_contents($filePath, $text, FILE_APPEND);
+        $feePrepaidExpense = number_format($reports[$indexReport]->settings->feePrepaidExpense, 2, ',', ' ');
+        $totalSalary = number_format($reports[$indexReport]->totalSalaryWithoutFine, 2, ',', ' ');
 
-        $text = iconv('utf-8//IGNORE', 'windows-1251//IGNORE', "Дата завершения;Сумма, руб.;Отработано дней;Сумма за выезд;Сложная погрузка;Меж город, руб;Город, руб;Аварийный комиссар, руб;Итого комиссия, руб.\r\n");
-        file_put_contents($filePath, $text, FILE_APPEND);
+        $spreadsheet = new Spreadsheet();
+        $activeWorksheet = $spreadsheet->getActiveSheet();
+        $activeWorksheet->setCellValue('A1', 'ФИО водителя');
+        $activeWorksheet->setCellValue('B1', "{$reports[$indexReport]->driver->lastName} {$reports[$indexReport]->driver->name} {$reports[$indexReport]->driver->secondName}");
+        $activeWorksheet->setCellValue('C1', "Зарплата Всего");
+        $activeWorksheet->setCellValue('D1', $totalSalary);
+        $activeWorksheet->setCellValue('E1', 'Аванс');
+        $activeWorksheet->setCellValue('F1', $feePrepaidExpense);
+
+        $tableHeader = [
+            ['Дата завершения','Сумма, руб.', 'Отработано дней', 'Дней в командировке', 'Сумма за выход', 'Сложная погрузка', 'Меж город, руб', 'Город, руб', 'Аварийный комиссар, руб', 'Удержания, руб', 'Итого сумма, руб.']
+        ];
+
+        $spreadsheet->getActiveSheet()->fromArray($tableHeader, NULL, 'A3');
+
+        $currentRow = 4;
 
         foreach ($reports[$indexReport]->deals as $index => $deal)
         {
@@ -99,8 +114,10 @@ class FilterModel extends Model
             $feeDailyAllowance = number_format($deal->feeDailyAllowance, 2, ',', ' ');
             $totalFee = number_format($deal->totalFee, 2, ',', ' ');
 
-            $text = iconv('utf-8//IGNORE', 'windows-1251//IGNORE', "{$closedDate};{$opportunity};;;{$feeDifficultLoading};{$feeIntercity};{$feeCity};{$feeEmergencyCommissioner};{$totalFee}\r\n");
-            file_put_contents($filePath, $text, FILE_APPEND);
+            $body = [[$closedDate, $opportunity, '', '', '', $feeDifficultLoading, $feeIntercity,$feeCity, $feeEmergencyCommissioner, '', $totalFee]];
+            $spreadsheet->getActiveSheet()->fromArray($body, NULL, "A{$currentRow}");
+
+            $currentRow++;
         }
 
         $countDeal = count($reports[$indexReport]->deals);
@@ -113,6 +130,7 @@ class FilterModel extends Model
         $feeDifficultLoading = collect($reports[$indexReport]->deals)->sum(function ($deal){
             return $deal->feeDifficultLoading;
         });
+
         $feeDifficultLoading = number_format($feeDifficultLoading, 2, ',', ' ');
 
         $feeIntercity = collect($reports[$indexReport]->deals)->sum(function ($deal){
@@ -130,15 +148,45 @@ class FilterModel extends Model
         });
         $feeEmergencyCommissioner = number_format($feeEmergencyCommissioner, 2, ',', ' ');
 
-        $totalSumDaily = $reports[$indexReport]->totalWorkedDays * $reports[$indexReport]->settings->feeExit;
+        $totalSumDaily = ($reports[$indexReport]->totalWorkedDays + $reports[$indexReport]->driver->businessDays) * $reports[$indexReport]->settings->feeExit;
 
         $totalFeeDeal = number_format($reports[$indexReport]->totalFeeDeal, 2, ',', ' ');
 
-        $text = iconv('utf-8//IGNORE', 'windows-1251//IGNORE', "{$countDeal};{$totalSum};{$reports[$indexReport]->totalWorkedDays};{$totalSumDaily};{$feeDifficultLoading};{$feeIntercity};{$feeCity};{$feeEmergencyCommissioner};{$totalFeeDeal}\r\n");
-        file_put_contents($filePath, $text, FILE_APPEND);
+        $footer = [
+            [$countDeal, $totalSum, $reports[$indexReport]->totalWorkedDays, $reports[$indexReport]->driver->businessDays, $totalSumDaily, $feeDifficultLoading, $feeIntercity, $feeCity, $feeEmergencyCommissioner, $reports[$indexReport]->driver->sumFine, $totalFeeDeal],
+            ['']
+        ];
 
-        $text = iconv('utf-8//IGNORE', 'windows-1251//IGNORE', ";;;;;;;Итого к выплате;{$reports[$indexReport]->salary}\r\n");
-        file_put_contents($filePath, $text, FILE_APPEND);
+        $spreadsheet->getActiveSheet()->fromArray($footer, NULL, "A{$currentRow}");
+
+        $currentRow += 2;
+
+        $activeWorksheet->setCellValue("J{$currentRow}", 'Итого к выплате');
+        $activeWorksheet->setCellValue("K{$currentRow}", $reports[$indexReport]->salary);
+
+        $styleArray = [
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                ],
+            ],
+        ];
+
+        $spreadsheet->getActiveSheet()->getStyle("A1:K{$currentRow}")->applyFromArray($styleArray);
+        $spreadsheet->getActiveSheet()->getColumnDimension('A')->setAutoSize(true);
+        $spreadsheet->getActiveSheet()->getColumnDimension('B')->setAutoSize(true);
+        $spreadsheet->getActiveSheet()->getColumnDimension('C')->setAutoSize(true);
+        $spreadsheet->getActiveSheet()->getColumnDimension('D')->setAutoSize(true);
+        $spreadsheet->getActiveSheet()->getColumnDimension('E')->setAutoSize(true);
+        $spreadsheet->getActiveSheet()->getColumnDimension('F')->setAutoSize(true);
+        $spreadsheet->getActiveSheet()->getColumnDimension('G')->setAutoSize(true);
+        $spreadsheet->getActiveSheet()->getColumnDimension('H')->setAutoSize(true);
+        $spreadsheet->getActiveSheet()->getColumnDimension('I')->setAutoSize(true);
+        $spreadsheet->getActiveSheet()->getColumnDimension('J')->setAutoSize(true);
+        $spreadsheet->getActiveSheet()->getColumnDimension('K')->setAutoSize(true);
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($filePath);
 
         return $filePath;
     }

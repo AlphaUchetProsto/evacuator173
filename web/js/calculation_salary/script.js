@@ -47,6 +47,7 @@ $(document).on('submit', '#filter-form', function (e){
         },
         success: function(content){
             $('.content').html($(content).find('.content').html());
+            // getDataFine();
         },
         error: function(content){
             alert('Error!');
@@ -125,16 +126,100 @@ $(document).on('submit', '#settings', function (e){
 })
 
 $(document).on('change', '.fine-input', function (e){
+
+    let input = $(this);
+    let spinner = input.closest('div').find('.wrapper-spinner');
+
+    let data = {
+        'contactId': input.attr('driver-id'),
+        'date':  $('#filtermodel-month option:selected').text() + ' '+ $('#filtermodel-year option:selected').text(),
+        'value': input.val(),
+    };
+
+    spinner.toggleClass('hide-block');
+
+    $.ajax({
+        url: '/calculation-salary/main/update-fine',
+        type: 'POST',
+        data: data,
+        success: function(content){
+            spinner.toggleClass('hide-block');
+            console.log(content);
+        },
+        error: function(content){
+            alert('Error!');
+        }
+    });
+})
+
+$(document).on('change', '.business-input', function (e){
+
+    let input = $(this);
+    let spinner = input.closest('div').find('.wrapper-spinner');
+
+    let data = {
+        'contactId': input.attr('driver-id'),
+        'date':  $('#filtermodel-month option:selected').text() + ' '+ $('#filtermodel-year option:selected').text(),
+        'value': input.val(),
+    };
+
+    spinner.toggleClass('hide-block');
+
+    $.ajax({
+        url: '/calculation-salary/main/update-bussines-day',
+        type: 'POST',
+        data: data,
+        success: function(content){
+            spinner.toggleClass('hide-block');
+            console.log(content);
+        },
+        error: function(content){
+            alert('Error!');
+        }
+    });
+})
+
+/*$(document).on('change', '.business-input', function (e){
     var element = $(this).closest('div').find('.wrapper-spinner');
 
     element.toggleClass('hide-block');
 
-    BX24.callMethod('crm.contact.update', {'ID': $(this).attr('driver-id'), 'fields': {'UF_CRM_1691405841467': $(this).val()}}, function (res){
+    BX24.callMethod('crm.contact.update', {'ID': $(this).attr('driver-id'), 'fields': {'UF_CRM_1693232836445': $(this).val()}}, function (res){
         element.toggleClass('hide-block');
     });
-})
+})*/
 
 $(document).on('click', '.open-details', function (){
     let detailsRowId = $(this).attr('aria-label');
     $('.data-' + detailsRowId).toggleClass('hide-block');
 })
+
+/*
+function getDataFine()
+{
+    $('.fine-input').each(function (){
+
+        let input = $(this);
+        let spinner = input.closest('div').find('.wrapper-spinner');
+
+        let data = {
+            'contactId': input.attr('driver-id'),
+            'date': $('#filtermodel-year').val() + '' + $('#filtermodel-month').val(),
+        };
+
+        spinner.toggleClass('hide-block');
+
+        $.ajax({
+            url: '/calculation-salary/main/get-fine',
+            type: 'POST',
+            data: data,
+            success: function(content){
+                console.log(content);
+                spinner.toggleClass('hide-block');
+            },
+            error: function(content){
+                alert('Error!');
+            }
+        });
+    });
+}*/

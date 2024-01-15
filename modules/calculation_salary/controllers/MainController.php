@@ -93,4 +93,113 @@ class MainController extends Controller
 
         return $this->render('install');
     }
+
+    public function actionUpdateFine()
+    {
+        \Yii::$app->response->format = Response::FORMAT_JSON;
+
+        $postData = \Yii::$app->request->post();
+
+        $client = App::instance();
+
+        ['result' => $items] = $client->request('entity.item.get', [
+            'ENTITY' => 'fine',
+            'FILTER' => [
+                'NAME' => $postData['date'],
+                'PROPERTY_contactId' => $postData['contactId'],
+            ],
+        ]);
+
+        if(empty($items))
+        {
+            $response = $client->request('entity.item.add', [
+                'ENTITY' => 'fine',
+                'NAME' => $postData['date'],
+                'PROPERTY_VALUES' => $postData,
+            ]);
+        }
+        else
+        {
+            $response = $client->request('entity.item.update', [
+                'ENTITY' => 'fine',
+                'ID' => $items[0]['ID'],
+                'PROPERTY_VALUES' => $postData,
+            ]);
+        }
+
+        return [
+            'result' => 'Данные успешно обновлены!',
+        ];
+    }
+
+    public function actionUpdateBussinesDay()
+    {
+        \Yii::$app->response->format = Response::FORMAT_JSON;
+
+        $postData = \Yii::$app->request->post();
+
+        $client = App::instance();
+
+        ['result' => $items] = $client->request('entity.item.get', [
+            'ENTITY' => 'business_days',
+            'FILTER' => [
+                'NAME' => $postData['date'],
+                'PROPERTY_contactId' => $postData['contactId'],
+            ],
+        ]);
+
+        if(empty($items))
+        {
+            $response = $client->request('entity.item.add', [
+                'ENTITY' => 'business_days',
+                'NAME' => $postData['date'],
+                'PROPERTY_VALUES' => $postData,
+            ]);
+        }
+        else
+        {
+            $response = $client->request('entity.item.update', [
+                'ENTITY' => 'business_days',
+                'ID' => $items[0]['ID'],
+                'PROPERTY_VALUES' => $postData,
+            ]);
+        }
+
+        return [
+            'result' => 'Данные успешно обновлены!',
+        ];
+    }
+
+    public function actionTest()
+    {
+        $model = new FilterModel();
+        $model->month = 12;
+        $model->year = 2;
+        $model->validate();
+        
+        $result = $model->filter();
+
+        dd($result);
+    }
+
+//    public function actionGetFine()
+//    {
+//        \Yii::$app->response->format = Response::FORMAT_JSON;
+//
+//        $postData = ['contactId' => 5, 'date' => '082023'];
+//
+//        $client = App::instance();
+//
+//        ['result' => $items] = $client->request('entity.item.get', [
+//            'ENTITY' => 'fine',
+//            'FILTER' => [
+//                'NAME' => $postData['date'],
+//                'PROPERTY_contactId' => $postData['contactId'],
+//            ],
+//        ]);
+//
+//        return [
+//            'result' => !empty($items) ? $items[0]['PROPERTY_VALUES']['value'] : 0,
+//        ];
+//    }
 }
